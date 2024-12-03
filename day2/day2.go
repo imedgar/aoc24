@@ -15,85 +15,28 @@ type State struct {
 	hasRecov  bool
 }
 
-func Day2() {
-	file := utils.ReadFile("./day2/test.txt")
-	defer file.Close()
+var (
+	state  = State{true, "", 1, false}
+	output = 0
+)
 
-	output := 0
+func Day2() {
+	file := utils.ReadFile("./day2/input.txt")
+	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		line := scanner.Text()
-		parts := strings.Fields(line)
+		lvls := utils.StrSliceToInt(strings.Fields(line))
 
-		f := utils.StrToInt(parts[0])
-		s := utils.StrToInt(parts[1])
-		t := utils.StrToInt(parts[2])
+		state = State{true, "", 1, false}
 
-		state := State{true, "", 1, false}
-
-		if f == s && s == t { // neither inc or dec
-			continue
-		}
-
-		if f > t {
-			state.bhv = "dec"
-		} else if f < t {
-			state.bhv = "inc"
-		}
-
-		for i := 0; i < len(parts); i++ {
-			curr := utils.StrToInt(parts[i])
-			// Handle first element
-			if i == 0 {
-				nxt := utils.StrToInt(parts[i+1])
-				diff := utils.Abs(curr - nxt)
-				// first element is corrupt
-				if !isSafe(diff, curr, nxt, state.bhv) {
-					nxt2 := utils.StrToInt(parts[i+2])
-					diff := utils.Abs(nxt - nxt2)
-					// can recover ?
-					if !isSafe(diff, nxt, nxt2, state.bhv) {
-						state.safe = false
-						break
-					}
-					state.recAmount--
-					i++
-				}
-			} else if i > 0 && i < len(parts)-1 { // handle in between
-				prev := utils.StrToInt(parts[i-1])
-				nxt := utils.StrToInt(parts[i+1])
-				if prev == curr && curr == nxt {
-					state.safe = false
-					break
-				}
-				if prev == nxt {
-					state.safe = false
-					break
-				}
-				diffPrev := utils.Abs(prev - curr)
-				if !isSafe(diffPrev, prev, curr, state.bhv) {
-					if state.recAmount == 0 {
-						state.safe = false
-						break
-					}
-					diffNxt := utils.Abs(prev - nxt)
-					if !isSafe(diffNxt, prev, nxt, state.bhv) {
-						state.safe = false
-						break
-					}
-					state.recAmount--
-					i++
-				}
-			} else if i == len(parts)-1 { // Handle last element
-				prev := utils.StrToInt(parts[i-1])
-				diff := utils.Abs(prev - curr)
-				if !isSafe(diff, prev, curr, state.bhv) {
-					if state.recAmount == 0 {
-						state.safe = false
-						break
-					}
-				}
+		fmt.Println("handle core", lvls)
+		for i := 0; i < len(lvls); i++ {
+			safe := handleLvl(i, lvls)
+			if !safe {
+				fmt.Println("unsafe lvl", lvls[i], "core", lvls)
+				state.safe = false
 			}
 		}
 		if state.safe {
@@ -103,12 +46,46 @@ func Day2() {
 		}
 
 	}
-	fmt.Println("safe cores", output)
+	fmt.Println("\nsafe cores", output)
 }
 
-func isSafe(diff, prev, curr int, bhv string) bool {
-	return !((diff > 3 || diff < 1) ||
-		(bhv == "dec" && prev < curr) ||
-		(bhv == "inc" && prev > curr) ||
-		(prev == curr))
+func handleLvl(i int, lvls []int) bool {
+	if i == len(lvls)-1 { // skip last one
+		return true
+	}
+
+	curr := lvls[i]
+	nxt := lvls[i+1]
+	prevBhv := state.bhv
+	state.bhv = setBehaviour(curr, nxt)
+	if prevBhv != "" && prevBhv != state.bhv {
+		fmt.Println("unstable INC/DEC detected", lvls, prevBhv, state.bhv)
+		return false
+	}
+
+	diff := utils.Abs(curr - nxt)
+
+	fmt.Println("lvl", curr, nxt, "diff", diff, "bhv", state.bhv)
+	if state.bhv == "EQ" { // unsafe if not inc or dec
+		return false
+	}
+	if diff > 3 || diff < 1 { // unsafe if diff is >3 or <1
+		return false
+	}
+	if state.bhv == "DEC" && curr < nxt { // unsafe if when Decreasing theres an Increase
+		return false
+	}
+	if state.bhv == "INC" && curr > nxt {
+		return false
+	}
+	return true
+}
+
+func setBehaviour(curr, next int) string {
+	if curr > next {
+		return "DEC"
+	} else if curr < next {
+		return "INC"
+	}
+	return "EQ"
 }
