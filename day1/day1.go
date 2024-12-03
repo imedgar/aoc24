@@ -1,33 +1,32 @@
-package main
+package day1
 
 import (
 	"bufio"
 	"fmt"
-	"os"
-	"strconv"
 	"strings"
+
+	"github.com/imedgar/aoc24-imedgar/utils"
 )
 
-func main() {
-	file, err := os.Open("01/aoc_01.txt")
-	if err != nil {
-		fmt.Println("Error opening file:", err)
-		return
-	}
+func Day1() {
+	file := utils.ReadFile("./day1/aoc_01.txt")
 	defer file.Close()
 
 	left := []int{}
 	right := []int{}
 	leftMin, rightMin := -1, -1
+	left2 := []int{}
+	ocurrences := make(map[int]int)
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		line := scanner.Text()
-		parts := strings.Split(line, "   ")
+		parts := strings.Fields(line)
 
 		if len(parts) == 2 {
-			leftVal, rightVal := strToInt(parts[0], parts[1])
-
+			leftVal := utils.StrToInt(parts[0])
+			rightVal := utils.StrToInt(parts[1])
+			// part1
 			if isSmaller(leftMin, leftVal) {
 				left = insertSmaller(left, leftVal)
 				leftMin = leftVal
@@ -42,6 +41,14 @@ func main() {
 				right = insertBigger(right, rightVal)
 			}
 
+			// part2
+			left2 = append(left2, []int{leftVal}...)
+			i, ok := ocurrences[rightVal]
+			if !ok {
+				ocurrences[rightVal] = 1
+			} else {
+				ocurrences[rightVal] = i + 1
+			}
 		} else {
 			fmt.Println("Invalid format:", line)
 		}
@@ -52,16 +59,19 @@ func main() {
 	}
 
 	distance := 0
+	distance2 := 0
 	for i := 0; i < len(left); i++ {
-		curr := 0
-		if left[i] < right[i] {
-			curr = right[i] - left[i]
-		} else if right[i] < left[i] {
-			curr = left[i] - right[i]
+		distance += abs(left[i] - right[i])
+
+		occ := 0
+		v, ok := ocurrences[left[i]]
+		if ok {
+			occ = left[i] * v
 		}
-		distance += curr
+		distance2 += occ
 	}
 	fmt.Println("Total distance is", distance)
+	fmt.Println("Total distance 2 is", distance2)
 }
 
 func isSmaller(min, val int) bool {
@@ -92,14 +102,9 @@ func insertBigger(slice []int, value int) []int {
 	return slice
 }
 
-func strToInt(left, right string) (int, int) {
-	leftVal, err := strconv.Atoi(left)
-	if err != nil {
-		panic(err)
+func abs(n int) int {
+	if n < 0 {
+		return -n
 	}
-	rightVal, err := strconv.Atoi(right)
-	if err != nil {
-		panic(err)
-	}
-	return leftVal, rightVal
+	return n
 }
