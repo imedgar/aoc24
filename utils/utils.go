@@ -21,6 +21,18 @@ func StrSliceToInt(input []string) []int {
 	return result
 }
 
+func NewSliceWithoutElement(slice []int, index int) []int {
+	if index < 0 || index >= len(slice) {
+		return slice
+	}
+
+	newSlice := make([]int, 0, len(slice)-1)
+	newSlice = append(newSlice, slice[:index]...)
+	newSlice = append(newSlice, slice[index+1:]...)
+
+	return newSlice
+}
+
 func StrToInt(str string) int {
 	n, err := strconv.Atoi(str)
 	if err != nil {
