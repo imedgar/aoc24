@@ -2,6 +2,7 @@ package utils
 
 import (
 	"os"
+	"sort"
 	"strconv"
 )
 
@@ -19,6 +20,12 @@ func StrSliceToInt(input []string) []int {
 		result[i] = StrToInt(s)
 	}
 	return result
+}
+
+func SortRuneSlice(runes []rune) {
+	sort.Slice(runes, func(i, j int) bool {
+		return runes[i] < runes[j]
+	})
 }
 
 func NewSliceWithoutElement(slice []int, index int) []int {

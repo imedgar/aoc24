@@ -3,7 +3,6 @@ package day4
 import (
 	"bufio"
 	"fmt"
-	"sort"
 
 	"github.com/imedgar/aoc24-imedgar/utils"
 )
@@ -11,7 +10,6 @@ import (
 var (
 	patt  = []rune{'X', 'M', 'A', 'S'}
 	patt2 = []rune{'M', 'A', 'S'}
-	total = 0
 )
 
 func Day4() {
@@ -23,9 +21,7 @@ func Day4() {
 	var xmap [][]rune
 	total := 0
 	total2 := 0
-	sort.Slice(patt2, func(i, j int) bool {
-		return patt2[i] < patt2[j]
-	})
+	utils.SortRuneSlice(patt2)
 
 	for scanner.Scan() {
 		txt := scanner.Text()
@@ -189,13 +185,8 @@ func checkXm(xmap [][]rune, l, c int) bool {
 	fDiag := []rune{xmap[l-1][c-1], xmap[l][c], xmap[l+1][c+1]}
 	sDiag := []rune{xmap[l+1][c-1], xmap[l][c], xmap[l-1][c+1]}
 
-	sort.Slice(fDiag, func(i, j int) bool {
-		return fDiag[i] < fDiag[j]
-	})
-	sort.Slice(sDiag, func(i, j int) bool {
-		return sDiag[i] < sDiag[j]
-	})
-
+	utils.SortRuneSlice(fDiag)
+	utils.SortRuneSlice(sDiag)
 	for i, v := range patt2 {
 		if v != fDiag[i] || v != sDiag[i] {
 			return false
