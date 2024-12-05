@@ -28,16 +28,43 @@ func SortRuneSlice(runes []rune) {
 	})
 }
 
-func NewSliceWithoutElement(slice []int, index int) []int {
+func RemoveElementFrom[T any](slice []T, index int) []T {
 	if index < 0 || index >= len(slice) {
 		return slice
 	}
 
-	newSlice := make([]int, 0, len(slice)-1)
+	newSlice := make([]T, 0, len(slice)-1)
 	newSlice = append(newSlice, slice[:index]...)
 	newSlice = append(newSlice, slice[index+1:]...)
 
 	return newSlice
+}
+
+func InsertAtAny[T any](slice []T, ele T, idx int) []T {
+	if idx < 0 || idx > len(slice) {
+		panic("Position out of bounds")
+	}
+	slice = append(slice[:idx], append([]T{ele}, slice[idx:]...)...)
+	return slice
+}
+
+func MoveTo[T any](slice []T, from, to int) []T {
+	if from < 0 || from >= len(slice) || to < 0 || to >= len(slice) {
+		panic("index out of bounds")
+	}
+	if from == to {
+		return slice
+	}
+
+	ele := slice[from]
+	if from < to {
+		copy(slice[from:], slice[from+1:to+1]) // Shift left
+	} else {
+		copy(slice[to+1:from+1], slice[to:from]) // Shift right
+	}
+	slice[to] = ele
+
+	return slice
 }
 
 func StrToInt(str string) int {
