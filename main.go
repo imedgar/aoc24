@@ -8,6 +8,7 @@ import (
 	"github.com/imedgar/aoc24-imedgar/day3"
 	"github.com/imedgar/aoc24-imedgar/day4"
 	"github.com/imedgar/aoc24-imedgar/day5"
+	"github.com/imedgar/aoc24-imedgar/day6"
 )
 
 func main() {
@@ -21,4 +22,6 @@ func main() {
 	day4.Day4()
 	fmt.Println("\nDay 5")
 	day5.Day5()
+	fmt.Println("\nDay 6")
+	day6.Day6()
 }
