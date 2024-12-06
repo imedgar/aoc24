@@ -48,6 +48,14 @@ func InsertAtAny[T any](slice []T, ele T, idx int) []T {
 	return slice
 }
 
+func ReverseSlice[T any](s []T) []T {
+	n := len(s)
+	for i := 0; i < n/2; i++ {
+		s[i], s[n-1-i] = s[n-1-i], s[i]
+	}
+	return s
+}
+
 func MoveTo[T any](slice []T, from, to int) []T {
 	if from < 0 || from >= len(slice) || to < 0 || to >= len(slice) {
 		panic("index out of bounds")

@@ -15,15 +15,18 @@ type Rule struct {
 	after  []int
 }
 
+var rules = make(map[int]Rule)
+
 func Day5() {
 	file := utils.ReadFile("./day5/input.txt")
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
 
-	rules := make(map[int]Rule)
 	manuals := [][]int{}
+	toFix := [][]int{}
 	pages := 0
+	fixedPages := 0
 
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -51,34 +54,71 @@ func Day5() {
 		} else if strings.Contains(line, ",") {
 			check := utils.StrSliceToInt(strings.Split(line, ","))
 			checked := []int{}
-			toCheck := make([]int, len(check))
-			copy(toCheck, check)
+			toCheck := append([]int(nil), check...)
 			sorted := true
 			for _, page := range check {
 				toCheck = toCheck[1:]
-
-				for _, b := range checked {
-					if slices.Contains(rules[page].before, b) {
-						sorted = false
-						break
-					}
+				before, _ := checkBefore(checked, page)
+				if !before {
+					sorted = false
 				}
-				for _, a := range toCheck {
-					if slices.Contains(rules[page].after, a) {
-
-						sorted = false
-						break
-					}
+				after, _ := checkAfter(toCheck, page)
+				if !after {
+					sorted = false
 				}
 				checked = append(checked, page)
 			}
+
 			if sorted {
 				manuals = append(manuals, check)
 				pages += check[len(check)/2]
+			} else {
+				toFix = append(toFix, check)
 			}
 		}
 	}
 	fmt.Println("total pages", pages)
+	for _, fix := range toFix { // manual to fix
+		fixed := false
+		for !fixed {
+			toCheck := append([]int(nil), fix...)
+			checked := []int{}
+			isOk := true
+			for _, c := range fix {
+				toCheck = toCheck[1:]
+				before, idxBef := checkBefore(toCheck, c)
+				if !before {
+					isOk = false
+					fix = utils.MoveTo(fix, slices.Index(fix, toCheck[idxBef]), slices.Index(fix, c))
+				}
+				checked = append(checked, c)
+			}
+			if isOk {
+				fixed = true
+				fix = utils.ReverseSlice(fix)
+				fixedPages += fix[len(fix)/2]
+			}
+		}
+	}
+	fmt.Println("total fixed pages", fixedPages)
+}
+
+func checkBefore(checked []int, page int) (bool, int) {
+	for i, b := range checked {
+		if slices.Contains(rules[page].before, b) {
+			return false, i
+		}
+	}
+	return true, -1
+}
+
+func checkAfter(toCheck []int, page int) (bool, int) {
+	for i, a := range toCheck {
+		if slices.Contains(rules[page].after, a) {
+			return false, i
+		}
+	}
+	return true, -1
 }
 
 func toIdx(idx, len int) int {
