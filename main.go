@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/imedgar/aoc24-imedgar/day1"
 	"github.com/imedgar/aoc24-imedgar/day2"
@@ -12,6 +13,7 @@ import (
 )
 
 func main() {
+	startTime := time.Now()
 	fmt.Println("\nDay 1")
 	day1.Day1()
 	fmt.Println("\nDay 2")
@@ -24,4 +26,6 @@ func main() {
 	day5.Day5()
 	fmt.Println("\nDay 6")
 	day6.Day6()
+	elapsedTime := time.Since(startTime)
+	fmt.Printf("Execution Time: %s\n", elapsedTime)
 }

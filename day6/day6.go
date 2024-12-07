@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -11,75 +12,44 @@ import (
 )
 
 var (
-	lab          = [][]rune{}
-	labInit      = [][]rune{}
-	route        = [][]int{}
-	guardMov     = []string{"^", ">", "v", "<"}
-	guardPos     = &[]int{}
-	guardPosInit = []int{}
-	isLooped     = []string{}
+	guardMov = []string{"^", ">", "v", "<"}
+	startX   = -1
+	startY   = -1
+	lab      = [][]rune{}
 )
 
 func Day6() {
 	file := utils.ReadFile("./day6/input.txt")
-
 	fl := 0
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		line := scanner.Text()
 		located := locateGuard(line)
 		if located != "" {
-			*guardPos = []int{fl, strings.Index(line, located)}
-			guardPosInit = utils.CopySlice(*guardPos) // Use CopySlice here
+			startX, startY = fl, strings.Index(line, located)
 		}
 		lab = append(lab, []rune(line))
 		fl++
 	}
-	labInit = utils.DeepCopy(lab) // Use DeepCopy for a proper deep copy
-	for move(guardPos) != 0 {
-		//debug(10)
-	}
-	steps := 1
-	for _, f := range lab {
-		for _, t := range f {
-			if t == 'X' {
-				steps++
-			}
-		}
-	}
-	fmt.Println("finished patrolling", steps)
-	fmt.Println("route len", len(route))
-	anomalies := 0
-	route = utils.RemoveElementFrom(route, 0)
-	//test := []int{40, 51}
-	//route = [][]int{test}
-	for _, xy := range route {
-		x, y := xy[0], xy[1]
-		lab = utils.DeepCopy(labInit)             // Reset lab to its initial state
-		*guardPos = utils.CopySlice(guardPosInit) // Reset guard position properly
-		isLooped = []string{}
-		fmt.Println(isLooped)
-		if lab[x][y] != '.' {
-			continue
-		}
+	fmt.Println(startX, startY)
+	guard := NewGuard(lab[startX][startY], startX, startY)
 
-		fmt.Println("checking anomaly", x, y)
+	guard.patrol()
+	fmt.Println("finished patrolling", len(guard.visited))
+	anomalies := 0
+	visited := guard.visited
+	for _, pos := range visited {
+		x, y := parsePosition(pos)
+		savePos := lab[startX][startY]
+		guard2 := NewGuard(savePos, startX, startY)
 		lab[x][y] = 'O'
-		stuck := move(guardPos)
-		for stuck == 1 {
-			if x == 39 && y == 51 {
-				//debug(10)
-			}
-			stuck = move(guardPos)
-		}
-		if stuck == -1 {
-			fmt.Println("guard stuck bc of anomaly at", x, y)
+		if guard2.checkAnomalies() {
 			anomalies++
 		}
-		lab = utils.DeepCopy(labInit) // Reset lab to its initial state
+		lab[x][y] = '.'
+		lab[startX][startY] = savePos
 	}
 	fmt.Println("anomalies:", anomalies)
-	fmt.Println("route len", len(route))
 }
 
 func locateGuard(floor string) string {
@@ -92,104 +62,124 @@ func locateGuard(floor string) string {
 }
 
 func debug(milli time.Duration) {
-	clearScreen()
-	printLab()
+	fmt.Print("\033[H\033[2J")
+	fmt.Println("\nLab:")
+	for _, row := range lab {
+		fmt.Println(string(row))
+	}
 	time.Sleep(milli * time.Millisecond)
 }
 
-func printLab() {
-	fmt.Println("\nLab:")
-	for _, f := range lab {
-		fmt.Println(string(f))
+type Guard struct {
+	direction rune
+	position  []int
+	visited   []string
+	stuck     utils.Set[string]
+}
+
+func NewGuard(dir rune, x, y int) *Guard {
+	return &Guard{direction: dir, position: []int{x, y}, stuck: utils.NewSet[string]()}
+}
+
+func (g *Guard) patrol() {
+	patrolling := 1
+	for patrolling == 1 {
+		g.memorize()
+		patrolling = g.move()
 	}
 }
 
-func move(currPos *[]int) int {
-	pos := *currPos
-	x, y := pos[0], pos[1]
-	guard := lab[x][y]
-	if len(isLooped) > 200 {
-		isLooped = isLooped[len(isLooped)-200:]
+func (g *Guard) checkAnomalies() bool {
+	patrolling := 1
+	for patrolling == 1 {
+		if g.checkStuck() {
+			return true
+		}
+		patrolling = g.move()
 	}
-	stuck := slices.Index(isLooped, fmt.Sprintf("%d%d%c", x, y, guard))
-	switch guard {
-	case '^': // Move up
-		if x-1 < 0 {
-			return 0
-		}
-		if stuck != -1 {
-			return -1
-		}
-		if lab[x-1][y] == '#' || lab[x-1][y] == 'O' {
-			lab[x][y] = 'X'
-			route = append(route, []int{x, y})
-			lab[x][y+1] = '>'
-			(*currPos)[1] = y + 1
-		} else if lab[x-1][y] == '.' || lab[x-1][y] == 'X' {
-			lab[x][y] = 'X'
-			route = append(route, []int{x, y})
-			lab[x-1][y] = '^'
-			(*currPos)[0] = x - 1
-		}
-	case '>': // Move right
-		if y+1 >= len(lab[x]) {
-			return 0
-		}
-		if stuck != -1 {
-			return -1
-		}
-		if lab[x][y+1] == '#' || lab[x][y+1] == 'O' {
-			lab[x][y] = 'X'
-			route = append(route, []int{x, y})
-			lab[x+1][y] = 'v'
-			(*currPos)[0] = x + 1
-		} else if lab[x][y+1] == '.' || lab[x][y+1] == 'X' {
-			lab[x][y] = 'X'
-			route = append(route, []int{x, y})
-			lab[x][y+1] = '>'
-			(*currPos)[1] = y + 1
-		}
-	case 'v': // Move down
-		if x+1 >= len(lab) {
-			return 0
-		}
-		if stuck != -1 {
-			return -1
-		}
-		if lab[x+1][y] == '#' || lab[x+1][y] == 'O' {
-			lab[x][y] = 'X'
-			route = append(route, []int{x, y})
-			lab[x][y-1] = '<'
-			(*currPos)[1] = y - 1
-		} else if lab[x+1][y] == '.' || lab[x+1][y] == 'X' {
-			lab[x][y] = 'X'
-			route = append(route, []int{x, y})
-			lab[x+1][y] = 'v'
-			(*currPos)[0] = x + 1
-		}
-	case '<': // Move left
-		if y-1 < 0 {
-			return 0
-		}
-		if stuck != -1 {
-			return -1
-		}
-		if lab[x][y-1] == '#' || lab[x][y-1] == 'O' {
-			lab[x][y] = 'X'
-			route = append(route, []int{x, y})
-			lab[x-1][y] = '^'
-			(*currPos)[0] = x - 1
-		} else if lab[x][y-1] == '.' || lab[x][y-1] == 'X' {
-			lab[x][y] = 'X'
-			route = append(route, []int{x, y})
-			lab[x][y-1] = '<'
-			(*currPos)[1] = y - 1
-		}
-	}
-	isLooped = append(isLooped, fmt.Sprintf("%d%d%c", x, y, guard))
-	return 1
+	return false
 }
 
-func clearScreen() {
-	fmt.Print("\033[H\033[2J")
+func (g *Guard) rotate() {
+	switch g.direction {
+	case '^':
+		g.direction = '>'
+	case '>':
+		g.direction = 'v'
+	case 'v':
+		g.direction = '<'
+	case '<':
+		g.direction = '^'
+	}
+}
+
+func (g *Guard) move() int {
+	switch g.direction {
+	case '^': // Moving up
+		if g.position[0] == 0 { // Edge of the lab
+			return 0
+		}
+		facing := lab[g.position[0]-1][g.position[1]]
+		if facing == '#' || facing == 'O' { // Wall or obstacle
+			g.rotate()
+		} else {
+			g.position[0]--
+		}
+
+	case '>': // Moving right
+		if g.position[1] == len(lab[0])-1 { // Edge of the lab
+			return 0
+		}
+		facing := lab[g.position[0]][g.position[1]+1]
+		if facing == '#' || facing == 'O' { // Wall or obstacle
+			g.rotate()
+		} else {
+			g.position[1]++
+		}
+
+	case 'v': // Moving down
+		if g.position[0] == len(lab)-1 { // Edge of the lab
+			return 0
+		}
+		facing := lab[g.position[0]+1][g.position[1]]
+		if facing == '#' || facing == 'O' { // Wall or obstacle
+			g.rotate()
+		} else {
+			g.position[0]++
+		}
+
+	case '<': // Moving left
+		if g.position[1] == 0 { // Edge of the lab
+			return 0
+		}
+		facing := lab[g.position[0]][g.position[1]-1]
+		if facing == '#' || facing == 'O' { // Wall or obstacle
+			g.rotate()
+		} else {
+			g.position[1]--
+		}
+	}
+	return 1 // Guard has not escaped
+}
+
+func (g *Guard) memorize() {
+	location := strconv.Itoa(g.position[0]) + "-" + strconv.Itoa(g.position[1])
+	if slices.Index(g.visited, location) == -1 {
+		g.visited = append(g.visited, location)
+	}
+}
+
+func (g *Guard) checkStuck() bool {
+	location := strconv.Itoa(g.position[0]) + "-" + strconv.Itoa(g.position[1]) + string(g.direction)
+	if !g.stuck.Contains(location) {
+		g.stuck.Add(location)
+		return false
+	}
+	return true
+}
+
+func parsePosition(pos string) (int, int) {
+	var x, y int
+	fmt.Sscanf(pos, "%d-%d", &x, &y)
+	return x, y
 }
