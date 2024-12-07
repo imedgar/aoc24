@@ -48,6 +48,23 @@ func InsertAtAny[T any](slice []T, ele T, idx int) []T {
 	return slice
 }
 
+func DeepCopy[T any](src [][]T) [][]T {
+	copy := make([][]T, len(src)) // Create a new slice of slices
+	for i := range src {
+		copy[i] = make([]T, len(src[i])) // Create a new sub-slice for each row
+		for j := range src[i] {
+			copy[i][j] = src[i][j] // Copy each element
+		}
+	}
+	return copy
+}
+
+func CopySlice[T any](src []T) []T {
+	dst := make([]T, len(src))
+	copy(dst, src)
+	return dst
+}
+
 func ReverseSlice[T any](s []T) []T {
 	n := len(s)
 	for i := 0; i < n/2; i++ {
