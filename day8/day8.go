@@ -14,7 +14,7 @@ type Antenna struct {
 }
 
 var (
-	ant    = make(map[string][]Antenna) // Correctly initialize the map
+	ant    = make(map[string][]Antenna)
 	area   = [][]string{}
 	total  = 0
 	unique = utils.NewSet[string]()
@@ -22,7 +22,6 @@ var (
 
 func Day8() {
 	file := utils.ReadFile("./day8/input.txt")
-
 	scanner := bufio.NewScanner(file)
 	l := 0
 	for scanner.Scan() {
@@ -45,16 +44,18 @@ func Day8() {
 		area = append(area, floor)
 		l++
 	}
-	// part1
+
+	part1()
+	fmt.Println("total =", total)
+
+	unique = utils.NewSet[string]()
+	total = 0
+
 	part2()
-	fmt.Println("total antinodes", total)
-	for _, f := range area {
-		fmt.Println(f)
-	}
+	fmt.Println("total =", total)
 }
 
 func part1() {
-	// pair antennas
 	for k := range ant {
 		for _, curr := range ant[k] {
 			for _, a := range ant[k] {
@@ -63,7 +64,6 @@ func part1() {
 				}
 				antiX, antiY := a.x-(curr.x-a.x), a.y-(curr.y-a.y)
 				if antiX < 0 || antiX > len(area)-1 || antiY < 0 || antiY > len(area[antiX])-1 {
-					// fmt.Println("antinode out of borders")
 					continue
 				}
 				addAntinode(antiX, antiY)
@@ -73,16 +73,10 @@ func part1() {
 }
 
 func part2() {
-	// pair antennas
 	for k := range ant {
 		for _, curr := range ant[k] {
 			for _, a := range ant[k] {
 				if curr.x == a.x && curr.y == a.y {
-					continue
-				}
-				antiX, antiY := a.x-(curr.x-a.x), a.y-(curr.y-a.y)
-				if antiX < 0 || antiX > len(area)-1 || antiY < 0 || antiY > len(area[antiX])-1 {
-					// fmt.Println("antinode out of borders")
 					continue
 				}
 				addAntinodes(curr.x, curr.y, a.x, a.y)
@@ -92,41 +86,17 @@ func part2() {
 }
 
 func addAntinode(antiX, antiY int) {
-	// fmt.Println("trying antinode for", curr.x, curr.y, "to", a.x, a.y, "at", antiX, antiY)
-	potential := area[antiX][antiY]
-	if potential == "." {
-		area[antiX][antiY] = "#"
-		key := fmt.Sprintf("%s-%s", antiX, antiY)
-		if !unique.Contains(key) {
-			fmt.Println("antinode at", antiX, antiY)
-			unique.Add(fmt.Sprintf("%s-%s", antiX, antiY))
-			total++
-		}
-	} else if potential != "#" {
-		key := fmt.Sprintf("%s-%s", antiX, antiY)
-		if !unique.Contains(key) {
-			fmt.Println("current", antiX, antiY, "overlaps antenna")
-			unique.Add(fmt.Sprintf("%s-%s", antiX, antiY))
-			total++
-		}
-	} else if potential == "#" {
-		//			fmt.Println("current", curr.x, curr.y, "pairing to", a.x, a.y, "diff", antiX, antiY, "overlaps antinode")
-		// total++
+	key := fmt.Sprintf("%d-%d", antiX, antiY)
+	if !unique.Contains(key) {
+		unique.Add(key)
+		total++
 	}
 }
 
 func addAntinodes(prevX, prevY, newX, newY int) {
-	// fmt.Println("trying antinode for", curr.x, curr.y, "to", a.x, a.y, "at", antiX, antiY)
 	subsX, subsY := prevX-newX, prevY-newY
-	antiX, antiY := newX-subsX, newY-subsY
-	if antiX < 0 || antiX > len(area)-1 || antiY < 0 || antiY > len(area[antiX])-1 {
-		fmt.Println("antinode out of borders", antiX, antiY)
-		return
+	for prevX >= 0 && prevX < len(area) && prevY >= 0 && prevY < len(area[prevX]) {
+		addAntinode(prevX, prevY)
+		prevX, prevY = prevX-subsX, prevY-subsY
 	}
-	for antiX >= 0 && antiX <= len(area)-1 && antiY >= 0 && antiY <= len(area[antiX])-1 {
-		fmt.Println("adding at", antiX, antiY)
-		addAntinode(antiX, antiY)
-		antiX, antiY = antiX-subsX, antiY-subsY
-	}
-	fmt.Println("finished adding at", antiX, antiY)
 }
