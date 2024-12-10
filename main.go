@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/imedgar/aoc24-imedgar/day8"
+	"github.com/imedgar/aoc24-imedgar/day9"
 )
 
 func main() {
 	startTime := time.Now()
-	day8.Day8()
+	day9.Day9()
 	elapsedTime := time.Since(startTime)
 	fmt.Printf("Execution Time: %s\n", elapsedTime)
 }
