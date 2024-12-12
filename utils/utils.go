@@ -22,6 +22,16 @@ func StrSliceToInt(input []string) []int {
 	return result
 }
 
+func RunesToIntSlice(input []rune) []int {
+	output := []int{}
+	for _, r := range input {
+		if num, ok := RuneToInt(r); ok {
+			output = append(output, num)
+		}
+	}
+	return output
+}
+
 func SortRuneSlice(runes []rune) {
 	sort.Slice(runes, func(i, j int) bool {
 		return runes[i] < runes[j]
@@ -73,6 +83,16 @@ func ReverseSlice[T any](s []T) []T {
 	return s
 }
 
+func FindIndexes[T comparable](slice []T, match T) []int {
+	var indexes []int
+	for i, el := range slice {
+		if el == match {
+			indexes = append(indexes, i)
+		}
+	}
+	return indexes
+}
+
 func MoveTo[T any](slice []T, from, to int) []T {
 	if from < 0 || from >= len(slice) || to < 0 || to >= len(slice) {
 		panic("index out of bounds")
@@ -98,6 +118,13 @@ func StrToInt(str string) int {
 		panic(err)
 	}
 	return n
+}
+
+func RuneToInt(r rune) (int, bool) {
+	if r >= '0' && r <= '9' {
+		return int(r - '0'), true
+	}
+	return 0, false
 }
 
 func Abs(n int) int {
